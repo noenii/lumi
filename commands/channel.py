@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 
 from stuff.funcs import ts
-# from stuff.views import paginate, send_pages
+from stuff.views import vPaginator, chunk_list
 
 class Channel(commands.Cog):
     def __init__(self, bot):
@@ -15,7 +15,7 @@ class Channel(commands.Cog):
 
         topic = getattr(channel, 'topic', None) or ""
         e = discord.Embed(
-            title = f"#{channel.name} — ({channel.id})",    # all em dashes were inserted by a real person btw
+            title = f"#{channel.name} — ({channel.id})",
             description = f"\n{topic}" if topic else ""
         )
         e.url = f"https://discord.com/channels/{ctx.guild.id}/{channel.id}"
@@ -32,18 +32,19 @@ class Channel(commands.Cog):
                 e.add_field(
                     name = "Details",
                     value = f"> NSFW: **{channel.is_nsfw()}**\n"
-                    f"> Category: **{channel.category.name if channel.category else "None"}**\n"
-                    f"> Slowmode: {f"**{channel.slowmode_delay} s**" if channel.slowmode_delay else "**None**"}",
+                    f"> Category: **{channel.category.name if channel.category else 'None'}**\n"
+                    f"> Slowmode: {f'**{channel.slowmode_delay} s**' if channel.slowmode_delay else '**None**'}\n"
+                    f"> Active Threads: **{len(channel.threads) if hasattr(channel, "threads") else 0}**",
                     inline = True
                 )
 
             case discord.VoiceChannel() | discord.StageChannel():
                 e.add_field(
                     name = "Details",
-                    value = f"> Type: **{"Stage" if isinstance(channel, discord.StageChannel) else "Voice"}**\n"
+                    value = f"> Type: **{'Stage' if isinstance(channel, discord.StageChannel) else 'Voice'}**\n"
                     f"> Bitrate: **{channel.bitrate // 1000} kbps**\n"
                     f"> User Limit: **{channel.user_limit if channel.user_limit else 'Unlimited'}**\n"
-                    f"> Category: **{channel.category.name if channel.category else "None"}**",
+                    f"> Category: **{channel.category.name if channel.category else 'None'}**",
                     inline = True
                 )
 
@@ -52,8 +53,8 @@ class Channel(commands.Cog):
                     name = "Details",
                     value = f"> Type: **Thread**\n"
                     f"> Parent Channel: {channel.parent.mention if channel.parent else 'Unknown'}\n"
-                    f"> Archived: **{"True" if channel.archived else "False"}**\n"
-                    f"> Locked: **{"True" if channel.locked else "False"}**\n"
+                    f"> Archived: **{'True' if channel.archived else 'False'}**\n"
+                    f"> Locked: **{'True' if channel.locked else 'False'}**\n"
                     f"> Slowmode: {f'**{channel.slowmode_delay}s**' if channel.slowmode_delay else '**None**'}",
                     inline = True
                 )
@@ -68,7 +69,7 @@ class Channel(commands.Cog):
                 e.add_field(
                     name = "Details",
                     value = f"> Type: **Forum**\n"
-                    f"> Category: **{channel.category.name if channel.category else "None"}**\n"
+                    f"> Category: **{channel.category.name if channel.category else 'None'}**\n"
                     f"> Delay: **{f'{channel.default_auto_archive_duration} m' if channel.default_auto_archive_duration else 'None'}**\n"
                     f"> Total Tags: **{len(channel.available_tags)}**",
                     inline = True
@@ -98,7 +99,7 @@ class Channel(commands.Cog):
             e.add_field(name = "Invites", value = iv, inline = True)
 
         await ctx.send(embed = e)
-'''
+
     @commands.hybrid_command()
     async def channelperms(self, ctx: commands.Context, channel: discord.abc.GuildChannel = None):
         channel = channel or ctx.channel
@@ -126,21 +127,35 @@ class Channel(commands.Cog):
                 f"> Allowed: **{allows_text}**\n"
                 f"> Denied: **{denies_text}**"
             )
-
             entries.append(entry)
 
-        pages = paginate(
-            ctx,
-            t = f"Permissions for #{channel.name}",
-            items = entries,
-            per_page = 2,
-            formatter = lambda item: f"{item}\n"
-        )
+        chunks = list(chunk_list(entries, 2))
+        total_pages = len(chunks)
 
-        if len(pages) == 1:
-            await ctx.send(embed = pages[0])
-        else:
-            await send_pages(ctx, pages, buttons = ("prev", "page", "next"))
+        pages_data = []
+        for i, chunk in enumerate(chunks, start = 1):
+            items = [
+                discord.ui.TextDisplay(f"## Permissions for #{channel.name}"),
+                discord.ui.Separator(),
+                discord.ui.TextDisplay("\n\n".join(chunk)),
+                discord.ui.Separator(),
+                discord.ui.TextDisplay(f"-# Page {i}/{total_pages}")
+            ]
+            pages_data.append(items)
+
+        if len(pages_data) == 1:
+            view = vPaginator(pages_data = pages_data, buttons = [], timeout = 120)
+            message = await ctx.send(view = view, allowed_mentions = discord.AllowedMentions(roles = False, users = False, everyone = False))
+            view.message = message
+            return
+
+        view = vPaginator(
+            pages_data = pages_data,
+            buttons = ["prev", "next", "search", "exit"],
+            timeout = 120
+        )
+        message = await ctx.send(view = view, allowed_mentions = discord.AllowedMentions(roles = False, users = False, everyone = False))
+        view.message = message
 
     @commands.hybrid_command()
     async def threads(self, ctx: commands.Context, channel: discord.TextChannel = None):
@@ -158,31 +173,44 @@ class Channel(commands.Cog):
         a = act + art
 
         if not a:
-            return await ctx.send(f"-# No threads found in {channel.mention}")
+            return await ctx.send(f"-# No Threads found in {channel.mention}")
 
         entries = []
-
         for thread in a:
             entries.append(
                 f"{thread.mention} (**{thread.id}**)\n"
-                f"> Status: **{"Locked" if thread.locked else ("Archived" if thread.archived else "Active")}**\n"
-                f"> Parent: {thread.parent.mention if thread.parent else "**Unknown**"}\n"
+                f"> Status: **{'Locked' if thread.locked else ('Archived' if thread.archived else 'Active')}**\n"
+                f"> Parent: {thread.parent.mention if thread.parent else '**Unknown**'}\n"
                 f"> Members: {thread.member_count}\n"
                 f"> Owner: <@{thread.owner_id}>"
             )
 
-        pages = paginate(
-            ctx,
-            t = f"Threads in #{channel.name}",
-            items = entries,
-            per_page = 5,
-            formatter = lambda item: f"{item}\n"
-        )
+        chunks = list(chunk_list(entries, 5))
+        total_pages = len(chunks)
 
-        if len(pages) == 1:
-            await ctx.send(embed = pages[0])
-        else:
-            await send_pages(ctx, pages, buttons = ("prev", "next"))
-'''
+        pages_data = []
+        for i, chunk in enumerate(chunks, start=1):
+            items = [
+                discord.ui.TextDisplay(f"## Threads in #{channel.name}"),
+                discord.ui.Separator(),
+                discord.ui.TextDisplay("\n\n".join(chunk)),
+                discord.ui.Separator(),
+                discord.ui.TextDisplay(f"-# Page {i}/{total_pages}")
+            ]
+            pages_data.append(items)
+
+        if len(pages_data) == 1:
+            view = vPaginator(pages_data = pages_data, buttons = [], timeout = 120)
+            message = await ctx.send(view = view, allowed_mentions = discord.AllowedMentions(roles = False, users = False, everyone = False))
+            view.message = message
+            return
+
+        view = vPaginator(
+            pages_data = pages_data,
+            buttons = ["prev", "next", "search", "exit"]
+        )
+        message = await ctx.send(view = view, allowed_mentions = discord.AllowedMentions(roles = False, users = False, everyone = False))
+        view.message = message
+
 async def setup(bot):
     await bot.add_cog(Channel(bot))

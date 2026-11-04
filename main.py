@@ -1,11 +1,9 @@
-import discord, asyncio, time, threading, colorama, os
+import discord, asyncio, time, threading, colorama, os, logging
 
 from discord.ext import commands
 from colorama import Fore, Style
 
 from setup.config import TOKEN, PREFIX, ROOT
-from stuff.funcs import setup_logging, fmt_time
-from stuff.cli import console_listener
 
 from events import register_events
 
@@ -21,7 +19,24 @@ colorama.init(autoreset = True)
 bot.ready = False
 bot.start_time = time.time()
 
-bot.system_logger, bot.error_logger = setup_logging()
+os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+os.makedirs(ROOT/"logs", exist_ok = True)
+
+def mklog(name, filename, level):
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    if not logger.handlers:
+        file_path = os.path.join(ROOT/"logs", filename)
+
+        handler = logging.FileHandler(file_path, encoding = "utf-8")
+        handler.setFormatter(logging.Formatter("%(levelname)s - %(message)s - Time: %(asctime)s"))
+        logger.addHandler(handler)
+
+    return logger
+
+bot.system_logger = mklog("sys", "sys.log", logging.INFO)
+bot.error_logger = mklog("err", "err.log", logging.ERROR)
 
 async def main():
     print(Style.BRIGHT + Fore.BLUE + "\n[SYS] Starting up...")
@@ -44,7 +59,7 @@ async def main():
             await bot.load_extension(f"commands.{fn[:-3]}")
         except Exception as e:
             print(Style.BRIGHT + Fore.RED + f"[ERR] {e}")
-            bot.error_logger.error(f"[ERR] Failed to load extension {fn}, Error: {e}")
+            bot.system_logger.error(f"Failed to load extension {fn}, Error: {e}")
             fe.append(fn)
 
     print(Style.BRIGHT + Fore.BLUE + f"\n[SYS] Successfully Loaded Extensions ({tf - len(fe)}/{tf})")
@@ -52,10 +67,9 @@ async def main():
     if fe:
         failed_str = ", ".join(fe)
         print(Style.BRIGHT + Fore.YELLOW + f"[WRN] Failed to Load: {failed_str}")
+        bot.system_logger.warning(f" [WRN] Failed to load extensions: {failed_str}")
 
     register_events(bot)
-
-    threading.Thread(target = console_listener, args = (bot, asyncio.get_running_loop()), daemon = True).start()
 
     async with bot:
         await bot.start(TOKEN)

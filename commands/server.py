@@ -27,7 +27,7 @@ class Server(commands.Cog):
 
         e.add_field(
             name = "Created",
-            value = f"{ts(int(ctx.guild.created_at.timestamp()), 'D')} ({ts(int(ctx.guild.created_at.timestamp()), 'R')})",
+            value = f"> {ts(int(ctx.guild.created_at.timestamp()), 'D')} ({ts(int(ctx.guild.created_at.timestamp()), 'R')})",
             inline = False
         )
 
@@ -103,7 +103,7 @@ class Server(commands.Cog):
         v = container(
             ctx,
             image = ctx.guild.icon.url,
-            buttons = [(ctx.guild.icon.url, None, "<:discord:1546171146893004870>")]
+            buttons = [(ctx.guild.icon.url, None, "<:discord:1567438524108636241>")]
         )
 
         await ctx.send(view = v)
@@ -116,7 +116,7 @@ class Server(commands.Cog):
         v = container(
             ctx,
             image = ctx.guild.banner.url,
-            buttons = [(ctx.guild.banner.url, None, "<:discord:1546171146893004870>")]
+            buttons = [(ctx.guild.banner.url, None, "<:discord:1567438524108636241>")]
         )
 
         await ctx.send(view = v)
@@ -129,7 +129,7 @@ class Server(commands.Cog):
         v = container(
             ctx,
             image = ctx.guild.splash.url,
-            buttons = [(ctx.guild.splash.url, None, "<:discord:1546171146893004870>")]
+            buttons = [(ctx.guild.splash.url, None, "<:discord:1567438524108636241>")]
         )
 
         await ctx.send(view = v)

@@ -1,37 +1,4 @@
-import discord, logging, os
-
-from datetime import datetime, timezone
-
-from setup.config import ROOT, EMBED_COLOR
-
-def setup_logging():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    project_root = os.path.abspath(os.path.join(script_dir, ".."))
-
-    log_dir = ROOT/"logs"
-
-    os.makedirs(log_dir, exist_ok = True)
-
-    fmt = logging.Formatter("%(levelname)s - %(message)s - Time: %(asctime)s")
-
-    def build_logger(name, filename, level):
-        logger = logging.getLogger(name)
-        logger.setLevel(level)
-
-        if not logger.handlers:
-            file_path = os.path.join(log_dir, filename)
-
-            handler = logging.FileHandler(file_path, encoding = "utf-8")
-            handler.setFormatter(fmt)
-            logger.addHandler(handler)
-
-        return logger
-
-    system_logger = build_logger("sys", "sys.log", logging.INFO)
-    error_logger = build_logger("err", "err.log", logging.ERROR)
-
-    return system_logger, error_logger
+import discord
 
 def container(ctx, title = None, desc = None, image = None, buttons = None):
     view = discord.ui.LayoutView()

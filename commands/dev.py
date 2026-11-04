@@ -18,19 +18,19 @@ class System(commands.Cog):
 
         if ctx.interaction:
             await ctx.defer()
+            end = time.time()
         elif ctx.message:
             try:
-                await ctx.message.add_reaction("⭕")
+                await ctx.message.add_reaction(discord.PartialEmoji(name = "loading", id = 1490220248475893892, animated = True))
             except Exception:
                 pass
-
-        end = time.time()
+            end = time.time()
 
         await ctx.send(f"-# WS: **{round(self.bot.latency * 1000)} ms**, API: **{round((end - start) * 1000)} ms**")
 
         if ctx.message:
             try:
-                await ctx.message.remove_reaction("⭕", self.bot.user)
+                await ctx.message.remove_reaction(discord.PartialEmoji(name = "loading", id = 1490220248475893892, animated = True), self.bot.user)
             except Exception:
                 pass
 
@@ -42,7 +42,7 @@ class System(commands.Cog):
     @commands.hybrid_command()
     @commands.is_owner()
     async def env(self, ctx: commands.Context):
-        await ctx.send(f"-# Python: **{platform.python_version()}**, Discord.py: **{discord.__version__}**, OS: **{platform.system()} {platform.release()} {platform.machine()}**")
+        await ctx.send(f"-# Py: **{platform.python_version()}**, DPY: **{discord.__version__}**, OS: **{platform.system()} {platform.release()} {platform.machine()}**")
 
     @commands.hybrid_command()
     @commands.is_owner()
@@ -54,6 +54,7 @@ class System(commands.Cog):
     async def shutdown(self, ctx):
         await ctx.send("-# Shutting Down")
         print(Style.BRIGHT + Fore.MAGENTA + "[DEV] Bot Shutdown")
+        self.bot.system_logger.info("[SYS] Bot Shutdown")
 
         async def close():
             await asyncio.sleep(0)
@@ -66,76 +67,23 @@ class System(commands.Cog):
     async def restart(self, ctx):
         await ctx.send("-# Restarting...")
         print(Style.BRIGHT + Fore.MAGENTA + "[DEV] Bot Restarting...")
+        self.bot.system_logger.info("[SYS] Bot Restarted")
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
     @commands.hybrid_command()
     @commands.is_owner()
-    async def load(self, ctx, extension: str):
-        try:
-            await self.bot.load_extension(f"commands.{extension}")
-
-            await ctx.send(f"-# Successfully Loaded **{extension}**")
-            print(Style.BRIGHT + Fore.MAGENTA + f"[DEV] Loaded {extension}")
-
-        except Exception as e:
-            await self.extension_error(ctx, extension, e)
+    async def load(self, ctx, *, extensions: str = None):
+        await self.p_ext(ctx, extensions, self.bot.load_extension, "Load")
 
     @commands.hybrid_command()
     @commands.is_owner()
-    async def unload(self, ctx, extension: str):
-        try:
-            await self.bot.unload_extension(f"commands.{extension}")
-
-            await ctx.send(f"-# Successfully Unloaded **{extension}**")
-            print(Style.BRIGHT + Fore.MAGENTA + f"[DEV] Unloaded {extension}")
-
-        except Exception as e:
-            await self.extension_error(ctx, extension, e)
+    async def unload(self, ctx, *, extensions: str = None):
+        await self.p_ext(ctx, extensions, self.bot.unload_extension, "Unload")
 
     @commands.hybrid_command()
     @commands.is_owner()
-    async def reload(self, ctx, extension: str):
-        try:
-            await self.bot.reload_extension(f"commands.{extension}")
-
-            await ctx.send(f"-# Successfully Reloaded **{extension}**")
-            print(Style.BRIGHT + Fore.MAGENTA + f"[DEV] Reloaded {extension}")
-
-        except Exception as e:
-            await self.extension_error(ctx, extension, e)
-
-    @commands.hybrid_command()
-    @commands.is_owner()
-    async def reloadall(self, ctx):
-        ok = []
-        failed = []
-
-        for file in (ROOT/"commands").glob("*.py"):
-            if file.stem.startswith("_"):
-                continue
-
-            ext = f"commands.{file.stem}"
-
-            try:
-                await self.bot.reload_extension(ext)
-                ok.append(file.stem)
-            except Exception as e:
-                failed.append(file.stem)
-                await self.extension_error(ctx, file.stem, e)
-
-        msg = ""
-
-        if ok:
-            msg += f"-# Successfully Reloaded **{len(ok)}** cogs: **{'**, **'.join(ok)}**"
-
-        if ok and failed:
-            msg += "\n"
-
-        if failed:
-            msg += f"-# Failed on {len(failed)}: **{', '.join(failed)}**"
-
-        await ctx.send(msg)
-        print(Style.BRIGHT + Fore.MAGENTA + "[DEV] Reloaded all Cogs")
+    async def reload(self, ctx, *, extensions: str = None):
+        await self.p_ext(ctx, extensions, self.bot.reload_extension, "Reload")
 
     @commands.hybrid_command()
     @commands.is_owner()
@@ -144,7 +92,6 @@ class System(commands.Cog):
             synced = await self.bot.tree.sync()
             print(Style.BRIGHT + Fore.MAGENTA + f"[DEV] Synced {len(synced)} Commands")
             await ctx.send(f"-# Successfully synced {len(synced)} commands")
-
         except Exception as e:
             print(Style.BRIGHT + Fore.RED + "[ERR] Failed to Sync Commands")
             await ctx.send("-# Failed to Sync Commands")
@@ -190,17 +137,53 @@ class System(commands.Cog):
         except FileNotFoundError:
             await ctx.send("-# File not Found")
 
-    async def extension_error(self, ctx, extension, error):
-        if isinstance(error, commands.ExtensionNotFound):
-            return await ctx.send(f"-# **{extension}** Was Not Found")
+    async def p_ext(self, ctx, ext, afunc, a):
+        if not ext:
+            ext_l = [file.stem for file in (ROOT/"commands").glob("*.py") if not file.stem.startswith("_")]
+        else:
+            ext_l = ext.split()
 
-        if isinstance(error, commands.ExtensionNotLoaded):
-            return await ctx.send(f"-# **{extension}** is Not Loaded")
+        if len(ext_l) == 1:
+            e = ext_l[0]
+            full_ext = f"commands.{e}"
+            if not (ROOT / "commands" / f"{e}.py").exists():
+                return await ctx.send(f"-# **{e}** was not Found")
+            try:
+                await afunc(full_ext)
+                await ctx.send(f"-# Successfully {a}ed **{e}**")
+                print(Style.BRIGHT + Fore.MAGENTA + f"[DEV] {a}ed {e}")
+            except Exception as err:
+                if isinstance(err, commands.ExtensionNotFound):
+                    msg = f"-# **{e}** was not Found"
+                elif isinstance(err, commands.ExtensionNotLoaded):
+                    msg = f"-# **{e}** is not Loaded"
+                elif isinstance(err, commands.ExtensionAlreadyLoaded):
+                    msg = f"-# **{e}** is already Loaded"
+                else:
+                    raise err
+                await ctx.send(msg)
+        else:
+            s, f = [], []
 
-        if isinstance(error, commands.ExtensionAlreadyLoaded):
-            return await ctx.send(f"-# **{extension}** is Already Loaded")
+            for item in ext_l:
+                full_ext = f"commands.{item}"
+                try:
+                    await afunc(full_ext)
+                    s.append(item)
+                    print(Style.BRIGHT + Fore.MAGENTA + f"[DEV] {a}ed {item}")
+                except Exception as err:
+                    f.append(item)
+                    print(Style.BRIGHT + Fore.YELLOW + f"[WRN] Failed to {a.lower()} {item}: {err}")
 
-        raise error
+            m = "-# "
+            if s:
+                m += f"{a}ed **{'**, **'.join(s)}**"
+            if s and f:
+                m += ". "
+            if f:
+                m += f"Failed **{'**, **'.join(f)}**"
+
+            await ctx.send(m)
 
 async def setup(bot):
     await bot.add_cog(System(bot))

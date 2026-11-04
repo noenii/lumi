@@ -7,7 +7,7 @@ async def command_not_found(ctx, error):
     c = [cmd.name for cmd in ctx.bot.commands]
     m = difflib.get_close_matches(ctx.invoked_with, c, n = 3, cutoff = 0.7)
     s = (", ".join(f"**{i}**" for i in m) if m else None)
-    return await ctx.send(f"-# Did you Mean: {s}" if s else "-# Command Not Found")
+    return await ctx.send(f"-# Did you Mean: {s}" if s else "-# Command not Found")
 
 async def missing_required_argument(ctx, error):
     u = f"{ctx.prefix}{ctx.command.qualified_name} {' '.join(f'<{p}>' for p in ctx.command.clean_params)}"
@@ -36,13 +36,13 @@ async def bot_missing_permissions(ctx, error):
     return await ctx.send(f"-# I am Missing Permissions to do This, I Need: **{p}**")
 
 async def not_owner(ctx, error):
-    return await ctx.send("-# You Can't Use Dev Commands")
+    return await ctx.send("-# You Can't use Dev Commands")
 
 async def server_only(ctx, error):
-    return await ctx.send("-# This is a Server Only Command")
+    return await ctx.send("-# This is a Server only Command")
 
 async def dm_only(ctx, error):
-    return await ctx.send("-# This is a DM Only Command")
+    return await ctx.send("-# This is a DM only Command")
 
 async def many_args(ctx, error):
     u = f"{ctx.prefix}{ctx.command.qualified_name} {' '.join(f'<{p}>' for p in ctx.command.clean_params)}"
@@ -52,19 +52,19 @@ async def bad_color(ctx, error):
     return await ctx.send("-# Invalid Hex")
 
 async def msg_not_found(ctx, error):
-    return await ctx.send("-# Message Was Not Found")
+    return await ctx.send("-# Message was not Found")
 
 async def ch_not_found(ctx, error):
-    return await ctx.send("-# Channel Was Not Found")
+    return await ctx.send("-# Channel was not Found")
 
 async def th_not_found(ctx, error):
-    return await ctx.send("-# Thread Was Not Found")
+    return await ctx.send("-# Thread was not Found")
 
 async def r_not_found(ctx, error):
-    return await ctx.send("-# Role Was Not Found")
+    return await ctx.send("-# Role was not Found")
 
 async def g_not_found(ctx, error):
-    return await ctx.send("-# Server Was Not Found")
+    return await ctx.send("-# Server was not Found")
 
 ERROR_HANDLERS = {
     commands.CommandNotFound: command_not_found,

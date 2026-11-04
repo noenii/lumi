@@ -7,7 +7,6 @@ from setup.config import DEV_CMD
 colorama.init(autoreset = True)
 
 def register_events(bot):
-
     @bot.event
     async def on_ready():
         if bot.ready:
@@ -17,7 +16,7 @@ def register_events(bot):
 
         await bot.change_presence(
             status = discord.Status.dnd,
-            activity = discord.CustomActivity(name = "watching you")
+            activity = discord.CustomActivity(name = "it's a beautiful day outside")
         )
 
         print(Style.BRIGHT + Fore.BLUE +
@@ -31,16 +30,6 @@ def register_events(bot):
             f"   Successfully logged in as {bot.user}\n\n"
             "=========================================\n"
         )
-
-        '''     this KILLS startup time
-        try:
-            synced = await bot.tree.sync()
-            print(Style.BRIGHT + Fore.BLUE + f"[SYS] Successfully Synced {len(synced)} commands")
-
-        except Exception as e:
-            print(Style.BRIGHT + Fore.RED + f"[ERR] Error syncing commands: {e}")
-            bot.error_logger.error(f"[ERR] Failed to sync commands: {e}")
-        '''
 
         print(Style.BRIGHT + Fore.BLUE + "[SYS] Bot Started up")
         bot.system_logger.info("[SYS] Bot started up")
@@ -73,9 +62,9 @@ def register_events(bot):
         if handler:
             return await handler(ctx, error)
 
-        await ctx.reply("-# An Internal Error Occurred", mention_author = False)
+        await ctx.send("-# Something went wrong!")
 
         tb = traceback.format_exception(type(error), error, error.__traceback__)
         print(Style.BRIGHT + Fore.RED + f"[ERR] Command: {ctx.command}, Requested by: {ctx.author}, Server: {ctx.guild}, Channel: {ctx.channel}, Type: {type(error).__name__}")
         print(Style.DIM + Fore.RED + f"{tb}")
-        bot.error_logger.error(f"[ERR] Command: {ctx.command}, Requested by: {ctx.author.id}, Server: {ctx.guild.id}, Channel: {ctx.channel.id}, Message: {ctx.message.content}, Type: {type(error).__name__}")
+        bot.error_logger.error(f"Command: {ctx.command}, Requested by: {ctx.author.id}, Server: {ctx.guild.id}, Channel: {ctx.channel.id}, Message: {ctx.message.content}, Type: {type(error).__name__}")

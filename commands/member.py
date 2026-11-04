@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 
 from stuff.funcs import container, fetch_status, joinpos, list_roles, list_perms, ts
-from stuff.views import Paginator, chunk_list
+from stuff.views import vPaginator, chunk_list
 from setup.config import EMBED_COLOR
 
 class Member(commands.Cog):
@@ -57,7 +57,7 @@ class Member(commands.Cog):
         v = container(
             ctx,
             image = member.display_avatar.url,
-            buttons = [(member.display_avatar.url, None, "<:discord:1546171146893004870>")]
+            buttons = [(member.display_avatar.url, None, "<:discord:1567438524108636241>")]
         )
 
         await ctx.send(view = v)
@@ -65,9 +65,50 @@ class Member(commands.Cog):
     @commands.hybrid_command()
     async def status(self, ctx: commands.Context, member: discord.Member = None):
         member = member or ctx.author
-        status, activity = fetch_status(ctx, member)
 
-        await ctx.send(f"{status}\n{activity}")
+        status_map = {
+            discord.Status.online: "Online",
+            discord.Status.idle: "Idle",
+            discord.Status.dnd: "DND",
+            discord.Status.offline: "Offline",
+        }
+
+        status = status_map.get(member.status, "Offline")
+        stat = ""
+
+        custom_act = discord.utils.get(member.activities, type = discord.ActivityType.custom)
+        if custom_act:
+            status_text = custom_act.state or ""
+            emoji_text = f"{custom_act.emoji} " if custom_act.emoji else ""
+            if status_text or emoji_text:
+                stat = f"{emoji_text}**{status_text}**"
+
+        lines = []
+        for act in member.activities:
+            if isinstance(act, discord.CustomActivity):
+                continue
+            if isinstance(act, discord.Game):
+                lines.append(f"-# Playing **{act.name}**")
+            elif isinstance(act, discord.Streaming):
+                lines.append(f"-# Streaming **{act.name}** ({act.platform})")
+            elif isinstance(act, discord.Spotify):
+                lines.append(f"-# Listening to **{act.title}** by **{act.artist}**")
+            elif isinstance(act, discord.Activity):
+                if act.type == discord.ActivityType.watching:
+                    lines.append(f"-# Watching **{act.name}**")
+                elif act.type == discord.ActivityType.listening:
+                    lines.append(f"-# Listening to **{act.name}**")
+                elif act.type == discord.ActivityType.playing:
+                    lines.append(f"-# Playing **{act.name}**")
+                elif act.type == discord.ActivityType.competing:
+                    lines.append(f"-# Competing in **{act.name}**")
+                else:
+                    lines.append(f"-# {act.type.name.title()} **{act.name}**")
+
+        s = f"-# {stat}, **{status}**" if stat else f"-# **{status}**"
+        a = "\n".join(lines) if lines else ""
+
+        await ctx.send(f"{s}\n{a}" if a else s)
 
     @commands.hybrid_command()
     async def boost(self, ctx: commands.Context, member: discord.Member = None):
@@ -86,8 +127,7 @@ class Member(commands.Cog):
 
         p = [
             f"**{perm.replace('_', ' ').title()}**"
-            for perm, value in member.guild_permissions
-            if value
+            for perm, value in member.guild_permissions if value
         ]
 
         if not p:
@@ -96,29 +136,24 @@ class Member(commands.Cog):
         chunks = list(chunk_list(p, 10))
         total_pages = len(chunks)
 
-        containers = []
+        pages_data = []
         for i, chunk in enumerate(chunks, start=1):
-            c = discord.ui.Container()
+            items = [
+                discord.ui.Section(
+                    discord.ui.TextDisplay(f"## {member.display_name}'s permissions — {len(p)}"),
+                    accessory = discord.ui.Thumbnail(member.display_avatar.url)
+                ),
+                discord.ui.Separator(),
+                discord.ui.TextDisplay("\n".join(chunk)),
+                discord.ui.Separator(),
+                discord.ui.TextDisplay(f"-# Page {i}/{total_pages}")
+            ]
+            pages_data.append(items)
 
-            c.add_item(discord.ui.Section(
-                discord.ui.TextDisplay(f"## {member.display_name}'s permissions — {len(p)}"), # idk why these dashes look better than regular dashes
-                accessory = discord.ui.Thumbnail(member.display_avatar.url)
-            ))
-            c.add_item(discord.ui.Separator())
+        view = vPaginator(pages_data = pages_data, buttons = ["prev", "next", "search", "exit"])
 
-            c.add_item(discord.ui.TextDisplay("\n".join(chunk)))
-            c.add_item(discord.ui.Separator())
-
-            c.add_item(discord.ui.TextDisplay(f"-# Page {i}/{total_pages}"))
-
-            containers.append(c)
-
-        view = Paginator(
-            containers = containers,
-            author_id = ctx.author.id,
-            buttons = ["prev", "next", "search", "exit"]
-        )
-        await ctx.send(view = view)
+        message = await ctx.send(view = view)
+        view.message = message
 
 async def setup(bot):
     await bot.add_cog(Member(bot))
