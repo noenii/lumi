@@ -24,3 +24,4 @@ version history
 0.9.0: final backend update, logs renamed and cli finished
 0.9.1: improved member commands and paginator
 0.10.0: cli removed, paginator fixed, lots of command messages changed. generally a big update
+0.10.1: added a channels command, removed redundant stuff

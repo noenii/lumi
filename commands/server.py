@@ -18,45 +18,45 @@ class Server(commands.Cog):
 
         e = discord.Embed()
         e.set_author(
-            name = f"{ctx.guild.name}",
-            icon_url = ctx.guild.icon.url if ctx.guild.icon else None
+            name = f"{guild.name}",
+            icon_url = guild.icon.url if guild.icon else None
         )
 
         if guild.icon:
-            e.set_thumbnail(url = ctx.guild.icon.url)
+            e.set_thumbnail(url = guild.icon.url)
 
         e.add_field(
             name = "Created",
-            value = f"> {ts(int(ctx.guild.created_at.timestamp()), 'D')} ({ts(int(ctx.guild.created_at.timestamp()), 'R')})",
+            value = f"> {ts(int(guild.created_at.timestamp()), 'D')} ({ts(int(guild.created_at.timestamp()), 'R')})",
             inline = False
         )
 
-        total_counts = len(ctx.guild.stickers) + len(ctx.guild.emojis) + len(ctx.guild.roles)
+        total_counts = len(guild.stickers) + len(guild.emojis) + len(guild.roles)
         e.add_field(
             name = f"Assets - **{total_counts}**",
             value = (
-                f"> Stickers: `{len(ctx.guild.stickers)}`\n"
-                f"> Emojis: `{len(ctx.guild.emojis)}`\n"
-                f"> Roles: `{len(ctx.guild.roles)}`"
+                f"> Stickers: `{len(guild.stickers)}`\n"
+                f"> Emojis: `{len(guild.emojis)}`\n"
+                f"> Roles: `{len(guild.roles)}`"
             ),
             inline = True
         )
 
         e.add_field(
-            name = f"Channels - **{len(ctx.guild.channels)}**",
+            name = f"Channels - **{len(guild.channels)}**",
             value = (
-                f"> Categories: `{len(ctx.guild.categories)}`\n"
-                f"> Text: `{len(ctx.guild.text_channels)}`\n"
-                f"> Voice: `{len(ctx.guild.voice_channels)}`"
+                f"> Categories: `{len(guild.categories)}`\n"
+                f"> Text: `{len(guild.text_channels)}`\n"
+                f"> Voice: `{len(guild.voice_channels)}`"
             ),
             inline = True
         )
 
         e.add_field(
-            name = f"Members - **{ctx.guild.member_count}**",
+            name = f"Members - **{guild.member_count}**",
             value = (
-                f"> Total: `{ctx.guild.member_count}`\n"
-                f"> Boosters: `{len(ctx.guild.premium_subscribers)}`"
+                f"> Total: `{guild.member_count}`\n"
+                f"> Boosters: `{len(guild.premium_subscribers)}`"
             ),
             inline = True
         )
@@ -64,9 +64,9 @@ class Server(commands.Cog):
         e.add_field(
             name = "Boosts",
             value = (
-                f"> Level: `{ctx.guild.premium_tier}`\n"
-                f"> Boosts: `{ctx.guild.premium_subscription_count or 0}`\n"
-                f"> Boosters: `{len(ctx.guild.premium_subscribers)}`"
+                f"> Level: `{guild.premium_tier}`\n"
+                f"> Boosts: `{guild.premium_subscription_count or 0}`\n"
+                f"> Boosters: `{len(guild.premium_subscribers)}`"
             ),
             inline = True
         )
@@ -74,9 +74,9 @@ class Server(commands.Cog):
         e.add_field(
             name = "Design",
             value = (
-                f"> Icon: {f"[View]({ctx.guild.icon.url})" if guild.icon else "`None`"}\n"
-                f"> Banner: {f"[View]({ctx.guild.banner.url})" if guild.banner else "`None`"}\n"
-                f"> Splash: {f"[View]({ctx.guild.splash.url})" if guild.splash else "`None`"}"
+                f"> Icon: {f"[View]({guild.icon.url})" if guild.icon else "`None`"}\n"
+                f"> Banner: {f"[View]({guild.banner.url})" if guild.banner else "`None`"}\n"
+                f"> Splash: {f"[View]({guild.splash.url})" if guild.splash else "`None`"}"
             ),
             inline = True
         )
@@ -85,13 +85,13 @@ class Server(commands.Cog):
             name = "System",
             value = (
                 f"> Verification: `{guild.verification_level.name}`\n"
-                f"> MFA: `{"Enabled" if ctx.guild.mfa_level else "Disabled"}`\n"
-                f"> Vanity: `{f"{ctx.guild.vanity_url_code}" if ctx.guild.vanity_url_code else "`None`"}`"
+                f"> MFA: `{"Enabled" if guild.mfa_level else "Disabled"}`\n"
+                f"> Vanity: `{f"{guild.vanity_url_code}" if guild.vanity_url_code else "`None`"}`"
             ),
             inline = True
         )
 
-        e.set_footer(text = f"ID: {ctx.guild.id}")
+        e.set_footer(text = f"ID: {guild.id}")
 
         await ctx.send(embed = e)
 

@@ -4,14 +4,27 @@ from discord.ext import commands
 
 from stuff.funcs import ts
 from stuff.views import vPaginator, chunk_list
+from setup.config import EMBED_COLOR
 
 class Channel(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.hybrid_command()
-    async def channel(self, ctx: commands.Context, channel: discord.abc.GuildChannel = None):
-        channel = channel or ctx.channel
+    async def channel(self, ctx: commands.Context, *, q: str = None):
+        channel = None
+        if q:
+            c = q.strip("<#!&>")
+            if c.isdigit():
+                channel = ctx.guild.get_channel(int(c)) or ctx.guild.get_thread(int(c))
+            if not channel:
+                ac = list(ctx.guild.channels) + list(ctx.guild.threads)
+                qn = q.strip("#").lower()
+                channel = discord.utils.find(lambda c: c.name.lower() == qn, ac)
+            if not channel:
+                raise commands.ChannelNotFound(channel)
+        else:
+            channel = ctx.channel
 
         topic = getattr(channel, 'topic', None) or ""
         e = discord.Embed(
@@ -97,6 +110,55 @@ class Channel(commands.Cog):
                 iv = "Missing Permissions"
 
             e.add_field(name = "Invites", value = iv, inline = True)
+
+        await ctx.send(embed = e)
+
+    @commands.hybrid_command()
+    async def channels(self, ctx: commands.Context):
+        guild = ctx.guild
+
+        e = discord.Embed(
+            title = f"Channels in {guild.name}",
+            description = f"> **Count**: `{len(guild.channels)}`",
+            color = EMBED_COLOR
+        )
+
+        if guild.categories:
+            e.add_field(
+                name = f"Categories - **{len(guild.categories)}**",
+                value = "\n".join([f"> `{i.name}`" for i in guild.categories]),
+                inline = True
+            )
+
+        if guild.text_channels:
+            e.add_field(
+                name = f"Channels - **{len(guild.text_channels)}**",
+                value = "\n".join([f"> {i.mention}" for i in guild.text_channels]),
+                inline = True
+            )
+
+        if guild.voice_channels:
+            e.add_field(
+                name = f"Voice - **{len(guild.voice_channels)}**",
+                value = "\n".join([f"> {i.mention}" for i in guild.voice_channels]),
+                inline = True
+            )
+
+        if guild.stage_channels:
+            e.add_field(
+                name = f"Stage - **{len(guild.stage_channels)}**",
+                value = "\n".join([f"> {i.mention}" for i in guild.stage_channels]),
+                inline = True
+            )
+
+        forum_channels = [c for c in guild.channels if isinstance(c, discord.ForumChannel)]
+
+        if forum_channels:
+            e.add_field(
+                name = f"Forums - **{len(forum_channels)}**",
+                value = "\n".join([f"> {i.mention}" for i in forum_channels]),
+                inline = True
+            )
 
         await ctx.send(embed = e)
 
