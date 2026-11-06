@@ -12,8 +12,13 @@ class Server(commands.Cog):
 
     # owner = ctx.guild.owner or await self.bot.fetch_user(ctx.guild.owner_id)
 
-    @commands.hybrid_command()
+    @commands.hybrid_group(name = "server", invoke_without_command = True)
     async def server(self, ctx: commands.Context):
+        if ctx.invoked_subcommand is None:
+            await ctx.invoke(self.server_info)
+
+    @server.command(name = "info")
+    async def server_info(self, ctx: commands.Context):
         guild = ctx.guild
 
         e = discord.Embed()
@@ -95,8 +100,8 @@ class Server(commands.Cog):
 
         await ctx.send(embed = e)
 
-    @commands.hybrid_command()
-    async def icon(self, ctx: commands.Context):
+    @server.command(name = "icon")
+    async def server_icon(self, ctx: commands.Context):
         if not ctx.guild.icon:
             return await ctx.send("-# Server has No Icon")
 
@@ -108,8 +113,8 @@ class Server(commands.Cog):
 
         await ctx.send(view = v)
 
-    @commands.hybrid_command()
-    async def banner(self, ctx: commands.Context):
+    @server.command(name = "banner")
+    async def server_banner(self, ctx: commands.Context):
         if not ctx.guild.banner:
             return await ctx.send("-# Server has No Banner")
 
@@ -121,7 +126,7 @@ class Server(commands.Cog):
 
         await ctx.send(view = v)
 
-    @commands.hybrid_command()
+    @server.command(name = "splash")
     async def splash(self, ctx: commands.Context):
         if not ctx.guild.splash:
             return await ctx.send("-# Server has No Splash Banner")

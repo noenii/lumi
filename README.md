@@ -53,3 +53,5 @@ changes throughout
 0.10.1: added a channels command, removed redundant stuff
 
 0.10.2: styled README.md a bit
+
+0.10.3: experimenting with subcommands
