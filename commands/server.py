@@ -2,6 +2,7 @@ import discord
 
 from discord.ext import commands
 from stuff.funcs import container, ts
+from setup.config import EMBED_COLOR
 
 class Server(commands.Cog):
     def __init__(self, bot):
@@ -24,7 +25,8 @@ class Server(commands.Cog):
         e = discord.Embed()
         e.set_author(
             name = f"{guild.name}",
-            icon_url = guild.icon.url if guild.icon else None
+            icon_url = guild.icon.url if guild.icon else None,
+            color = EMBED_COLOR
         )
 
         if guild.icon:

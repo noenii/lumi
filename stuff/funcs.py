@@ -1,4 +1,4 @@
-import discord
+import discord, difflib
 
 def container(ctx, title = None, desc = None, image = None, buttons = None):
     view = discord.ui.LayoutView()
@@ -172,3 +172,7 @@ def perm_check(role: discord.Role):
     )
 
     return any(getattr(role.permissions, flag, False) for flag in p)
+
+def closest(t, p, n = 4, cutoff = 0.7):
+    matches = difflib.get_close_matches(t, p, n = n, cutoff = cutoff)
+    return ", ".join(f"**{item}**" for item in matches) if matches else None

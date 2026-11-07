@@ -16,7 +16,8 @@ class Role(commands.Cog):
         e = discord.Embed(
             title = f"**{role.name}**",
             description = f"-# There {'is' if m == 1 else 'are'} **{m}** member{'s' if m == 1 else ''} with this role\n"
-            f"-# This role **{'is' if role.hoist else 'isn\'t'}** hoisted"
+            f"-# This role **{'is' if role.hoist else 'isn\'t'}** hoisted",
+            color = EMBED_COLOR
         )
 
         e.add_field(

@@ -55,3 +55,5 @@ changes throughout
 0.10.2: styled README.md a bit
 
 0.10.3: experimenting with subcommands
+
+0.10.4: finalized subcommand architecture

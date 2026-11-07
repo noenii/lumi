@@ -1,8 +1,7 @@
 import discord
-
 from discord.ext import commands
 
-from stuff.funcs import ts
+from stuff.funcs import ts, closest
 from stuff.views import vPaginator, chunk_list
 from setup.config import EMBED_COLOR
 
@@ -10,8 +9,16 @@ class Channel(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command()
+    @commands.hybrid_group(name = "channel", invoke_without_command = True)
     async def channel(self, ctx: commands.Context, *, q: str = None):
+        if q:
+            s = closest(q.split()[0], [cmd.name for cmd in self.channel.commands])
+            return await ctx.send(f"-# Did you Mean: {s}" if s else "-# Subcommand not Found")
+
+        await ctx.invoke(self.channel_info, q = q)
+
+    @channel.command(name = "info")
+    async def channel_info(self, ctx: commands.Context, *, q: str = None):
         channel = None
         if q:
             c = q.strip("<#!&>")
@@ -29,7 +36,8 @@ class Channel(commands.Cog):
         topic = getattr(channel, 'topic', None) or ""
         e = discord.Embed(
             title = f"#{channel.name} — ({channel.id})",
-            description = f"\n{topic}" if topic else ""
+            description = f"\n> {topic}" if topic else "",
+            color = EMBED_COLOR
         )
         e.url = f"https://discord.com/channels/{ctx.guild.id}/{channel.id}"
         e.set_author(name = f"{ctx.guild.name}", icon_url = ctx.guild.icon.url if ctx.guild.icon else None)
@@ -47,7 +55,7 @@ class Channel(commands.Cog):
                     value = f"> NSFW: **{channel.is_nsfw()}**\n"
                     f"> Category: **{channel.category.name if channel.category else 'None'}**\n"
                     f"> Slowmode: {f'**{channel.slowmode_delay} s**' if channel.slowmode_delay else '**None**'}\n"
-                    f"> Active Threads: **{len(channel.threads) if hasattr(channel, "threads") else 0}**",
+                    f"> Active Threads: **{len(channel.threads) if hasattr(channel, 'threads') else 0}**",
                     inline = True
                 )
 
@@ -105,69 +113,20 @@ class Channel(commands.Cog):
                     invite_lines = [f"[{inv.code}](https://discord.gg/{inv.code}) — **{inv.uses}** uses" for inv in i[:3]]
                     iv = "\n".join(invite_lines)
                 else:
-                    iv = "No active invites"
+                    iv = "-# None"
             except discord.Forbidden:
-                iv = "Missing Permissions"
+                iv = "-# Missing Permissions"
 
             e.add_field(name = "Invites", value = iv, inline = True)
 
         await ctx.send(embed = e)
 
-    @commands.hybrid_command()
-    async def channels(self, ctx: commands.Context):
-        guild = ctx.guild
-
-        e = discord.Embed(
-            title = f"Channels in {guild.name}",
-            description = f"> **Count**: `{len(guild.channels)}`",
-            color = EMBED_COLOR
-        )
-
-        if guild.categories:
-            e.add_field(
-                name = f"Categories - **{len(guild.categories)}**",
-                value = "\n".join([f"> `{i.name}`" for i in guild.categories]),
-                inline = True
-            )
-
-        if guild.text_channels:
-            e.add_field(
-                name = f"Channels - **{len(guild.text_channels)}**",
-                value = "\n".join([f"> {i.mention}" for i in guild.text_channels]),
-                inline = True
-            )
-
-        if guild.voice_channels:
-            e.add_field(
-                name = f"Voice - **{len(guild.voice_channels)}**",
-                value = "\n".join([f"> {i.mention}" for i in guild.voice_channels]),
-                inline = True
-            )
-
-        if guild.stage_channels:
-            e.add_field(
-                name = f"Stage - **{len(guild.stage_channels)}**",
-                value = "\n".join([f"> {i.mention}" for i in guild.stage_channels]),
-                inline = True
-            )
-
-        forum_channels = [c for c in guild.channels if isinstance(c, discord.ForumChannel)]
-
-        if forum_channels:
-            e.add_field(
-                name = f"Forums - **{len(forum_channels)}**",
-                value = "\n".join([f"> {i.mention}" for i in forum_channels]),
-                inline = True
-            )
-
-        await ctx.send(embed = e)
-
-    @commands.hybrid_command()
-    async def channelperms(self, ctx: commands.Context, channel: discord.abc.GuildChannel = None):
+    @channel.command(name = "perms")
+    async def channel_perms(self, ctx: commands.Context, channel: discord.abc.GuildChannel = None):
         channel = channel or ctx.channel
 
         if not channel.overwrites:
-            return await ctx.send(f"-# {channel.mention} has no Permission Overrides.")
+            return await ctx.send(f"-# {channel.mention} has no Permission Overrides")
 
         entries = []
         for target, overwrite in channel.overwrites.items():
@@ -219,8 +178,8 @@ class Channel(commands.Cog):
         message = await ctx.send(view = view, allowed_mentions = discord.AllowedMentions(roles = False, users = False, everyone = False))
         view.message = message
 
-    @commands.hybrid_command()
-    async def threads(self, ctx: commands.Context, channel: discord.TextChannel = None):
+    @channel.command(name = "threads")
+    async def channel_threads(self, ctx: commands.Context, channel: discord.TextChannel = None):
         channel = channel or ctx.channel
 
         act = channel.threads if hasattr(channel, "threads") else []
@@ -273,6 +232,55 @@ class Channel(commands.Cog):
         )
         message = await ctx.send(view = view, allowed_mentions = discord.AllowedMentions(roles = False, users = False, everyone = False))
         view.message = message
+
+    @commands.hybrid_command()
+    async def channels(self, ctx: commands.Context):
+        guild = ctx.guild
+
+        e = discord.Embed(
+            title = f"Channels in {guild.name}",
+            description = f"> **Count**: `{len(guild.channels)}`",
+            color = EMBED_COLOR
+        )
+
+        if guild.categories:
+            e.add_field(
+                name = f"Categories - **{len(guild.categories)}**",
+                value = "\n".join([f"> `{i.name}`" for i in guild.categories]),
+                inline = True
+            )
+
+        if guild.text_channels:
+            e.add_field(
+                name = f"Channels - **{len(guild.text_channels)}**",
+                value = "\n".join([f"> {i.mention}" for i in guild.text_channels]),
+                inline = True
+            )
+
+        if guild.voice_channels:
+            e.add_field(
+                name = f"Voice - **{len(guild.voice_channels)}**",
+                value = "\n".join([f"> {i.mention}" for i in guild.voice_channels]),
+                inline = True
+            )
+
+        if guild.stage_channels:
+            e.add_field(
+                name = f"Stage - **{len(guild.stage_channels)}**",
+                value = "\n".join([f"> {i.mention}" for i in guild.stage_channels]),
+                inline = True
+            )
+
+        forum_channels = [c for c in guild.channels if isinstance(c, discord.ForumChannel)]
+
+        if forum_channels:
+            e.add_field(
+                name = f"Forums - **{len(forum_channels)}**",
+                value = "\n".join([f"> {i.mention}" for i in forum_channels]),
+                inline = True
+            )
+
+        await ctx.send(embed = e)
 
 async def setup(bot):
     await bot.add_cog(Channel(bot))

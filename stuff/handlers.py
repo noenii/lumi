@@ -1,12 +1,11 @@
 import discord, difflib
 
-from discord.ext import commands
 from sys import path
+from discord.ext import commands
+from stuff.funcs import closest
 
 async def command_not_found(ctx, error):
-    c = [cmd.name for cmd in ctx.bot.commands]
-    m = difflib.get_close_matches(ctx.invoked_with, c, n = 3, cutoff = 0.7)
-    s = (", ".join(f"**{i}**" for i in m) if m else None)
+    s = closest(ctx.invoked_with, [cmd.name for cmd in ctx.bot.commands])
     return await ctx.send(f"-# Did you Mean: {s}" if s else "-# Command not Found")
 
 async def missing_required_argument(ctx, error):
@@ -66,6 +65,9 @@ async def r_not_found(ctx, error):
 async def g_not_found(ctx, error):
     return await ctx.send("-# Server was not Found")
 
+async def m_not_found(ctx, error):
+    return await ctx.send("-# Member was not Found")
+
 ERROR_HANDLERS = {
     commands.CommandNotFound: command_not_found,
     commands.MissingRequiredArgument: missing_required_argument,
@@ -84,5 +86,6 @@ ERROR_HANDLERS = {
     commands.ChannelNotFound: ch_not_found,
     commands.ThreadNotFound: th_not_found,
     commands.RoleNotFound: r_not_found,
-    commands.GuildNotFound: g_not_found
+    commands.GuildNotFound: g_not_found,
+    commands.MemberNotFound: m_not_found
 }

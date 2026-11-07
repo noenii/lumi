@@ -10,11 +10,11 @@ class Member(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command()
+    @commands.hybrid_command(name = "member")
     async def member(self, ctx: commands.Context, member: discord.Member = None):
         member = member or ctx.author
 
-        e = discord.Embed()
+        e = discord.Embed(color = EMBED_COLOR)
 
         e.add_field(
             name = "Joined",
@@ -50,8 +50,8 @@ class Member(commands.Cog):
 
         await ctx.send(embed = e)
 
-    @commands.hybrid_command()
-    async def avatar(self, ctx: commands.Context, member: discord.Member = None):
+    @commands.hybrid_command(name = "avatar")
+    async def member_avatar(self, ctx: commands.Context, member: discord.Member = None):
         member = member or ctx.author
 
         v = container(
@@ -62,8 +62,8 @@ class Member(commands.Cog):
 
         await ctx.send(view = v)
 
-    @commands.hybrid_command()
-    async def status(self, ctx: commands.Context, member: discord.Member = None):
+    @commands.hybrid_command(name = "status")
+    async def member_status(self, ctx: commands.Context, member: discord.Member = None):
         member = member or ctx.author
 
         status_map = {
@@ -110,8 +110,8 @@ class Member(commands.Cog):
 
         await ctx.send(f"{s}\n{a}" if a else s)
 
-    @commands.hybrid_command()
-    async def boost(self, ctx: commands.Context, member: discord.Member = None):
+    @commands.hybrid_command(name = "boost")
+    async def member_boost(self, ctx: commands.Context, member: discord.Member = None):
         member = member or ctx.author
 
         if member.premium_since:
@@ -119,8 +119,8 @@ class Member(commands.Cog):
         else:
             await ctx.send("-# Boosting: **False**")
 
-    @commands.hybrid_command()
-    async def perms(self, ctx: commands.Context, member: discord.Member = None):
+    @commands.hybrid_command(name = "perms")
+    async def member_perms(self, ctx: commands.Context, member: discord.Member = None):
         member = member or ctx.author
         if member.guild_permissions.administrator:
             return await ctx.send("-# User has Administrator")
