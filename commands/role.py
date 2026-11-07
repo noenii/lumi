@@ -2,7 +2,7 @@ import discord
 
 from discord.ext import commands
 
-from stuff.funcs import ts, perm_check, list_roles
+from stuff.funcs import ts, perm_check, list_roles, closest
 from stuff.views import vPaginator, ePaginator, chunk_list
 from setup.config import EMBED_COLOR
 
@@ -10,8 +10,16 @@ class Role(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.hybrid_command()
-    async def role(self, ctx: commands.Context, role: discord.Role):
+    @commands.hybrid_group(name = "role", invoke_without_command = True)
+    async def role(self, ctx: commands.Context, *, q: str = None):
+        if q:
+            s = closest(q.split()[0], [cmd.name for cmd in self.role.commands])
+            return await ctx.send(f"-# Did you Mean: {s}" if s else "-# Subcommand not Found")
+
+        await ctx.invoke(self.role_info, q = q)
+
+    @role.command(name = "info")
+    async def role_info(self, ctx: commands.Context, role: discord.Role):
         m = len(role.members)
         e = discord.Embed(
             title = f"**{role.name}**",
@@ -29,8 +37,8 @@ class Role(commands.Cog):
 
         await ctx.send(embed = e)
 
-    @commands.hybrid_command()
-    async def roleinfo(self, ctx: commands.Context, role: discord.Role):
+    @role.command(name = "infop")
+    async def role_info(self, ctx: commands.Context, role: discord.Role):
         await ctx.send(f"-# Role: **{role.name}**, ID: **{role.id}**, Pos: **{role.position}**, Hoist: **{role.hoist}**, Mention: **{role.mentionable}**")
 
     @commands.hybrid_command()

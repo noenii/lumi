@@ -1,7 +1,7 @@
 import discord
 
 from discord.ext import commands
-from stuff.funcs import container, ts
+from stuff.funcs import container, ts, closest
 from setup.config import EMBED_COLOR
 
 class Server(commands.Cog):
@@ -14,19 +14,21 @@ class Server(commands.Cog):
     # owner = ctx.guild.owner or await self.bot.fetch_user(ctx.guild.owner_id)
 
     @commands.hybrid_group(name = "server", invoke_without_command = True)
-    async def server(self, ctx: commands.Context):
-        if ctx.invoked_subcommand is None:
-            await ctx.invoke(self.server_info)
+    async def server(self, ctx: commands.Context, *, q: str = None):
+        if q:
+            s = closest(q.split()[0], [cmd.name for cmd in self.server.commands])
+            return await ctx.send(f"-# Did you Mean: {s}" if s else "-# Subcommand not Found")
+
+        await ctx.invoke(self.server_info)
 
     @server.command(name = "info")
     async def server_info(self, ctx: commands.Context):
         guild = ctx.guild
 
-        e = discord.Embed()
+        e = discord.Embed(color = EMBED_COLOR)
         e.set_author(
             name = f"{guild.name}",
-            icon_url = guild.icon.url if guild.icon else None,
-            color = EMBED_COLOR
+            icon_url = guild.icon.url if guild.icon else None
         )
 
         if guild.icon:

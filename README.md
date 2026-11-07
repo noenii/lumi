@@ -56,4 +56,6 @@ changes throughout
 
 0.10.3: experimenting with subcommands
 
-0.10.4: finalized subcommand architecture
+0.10.4: fixing subcommands
+
+0.11.0: finalized subcommand architecture

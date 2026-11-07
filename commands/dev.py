@@ -139,11 +139,15 @@ class System(commands.Cog):
 
     async def p_ext(self, ctx, ext, afunc, a):
         if not ext:
-            ext_l = [file.stem for file in (ROOT/"commands").glob("*.py") if not file.stem.startswith("_")]
+            ext_l = [
+                file.stem
+                for file in (ROOT / "commands").glob("*.py")
+                if not file.stem.startswith("_")
+            ]
         else:
             ext_l = ext.split()
 
-        if len(ext_l) == 1:
+        if ext and len(ext_l) == 1:
             e = ext_l[0]
             full_ext = f"commands.{e}"
             if not (ROOT / "commands" / f"{e}.py").exists():
@@ -162,9 +166,9 @@ class System(commands.Cog):
                 else:
                     raise err
                 await ctx.send(msg)
+
         else:
             s, f = [], []
-
             for item in ext_l:
                 full_ext = f"commands.{item}"
                 try:
@@ -175,15 +179,15 @@ class System(commands.Cog):
                     f.append(item)
                     print(Style.BRIGHT + Fore.YELLOW + f"[WRN] Failed to {a.lower()} {item}: {err}")
 
-            m = "-# "
+            m = "-#"
             if s:
-                m += f"{a}ed **{'**, **'.join(s)}**"
+                m += f" {a}ed **{', '.join(s)}**"
             if s and f:
                 m += ". "
             if f:
-                m += f"Failed **{'**, **'.join(f)}**"
-
-            await ctx.send(m)
+                m += f" Failed **{', '.join(f)}**"
+            if s or f:
+                await ctx.send(m)
 
 async def setup(bot):
     await bot.add_cog(System(bot))

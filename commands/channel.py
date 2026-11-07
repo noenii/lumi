@@ -233,7 +233,7 @@ class Channel(commands.Cog):
         message = await ctx.send(view = view, allowed_mentions = discord.AllowedMentions(roles = False, users = False, everyone = False))
         view.message = message
 
-    @commands.hybrid_command()
+    @commands.hybrid_command(name = "channels")
     async def channels(self, ctx: commands.Context):
         guild = ctx.guild
 
